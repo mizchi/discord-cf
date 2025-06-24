@@ -2,32 +2,32 @@
 
 > ⚠️ **This project is currently under development and not yet ready for production use.**
 
-Discord.js互換のCloudflare Workers向けライブラリ。Discord APIをCloudflare Workers環境で使用できるように設計されています。
+A Discord.js-compatible library for Cloudflare Workers. Designed to use Discord API in the Cloudflare Workers environment.
 
-## 特徴
+## Features
 
-- 🚀 Cloudflare Workers環境に最適化
-- 🔧 Fetch APIベースのREST APIクライアント
-- 🔌 Cloudflare Durable ObjectsによるWebSocket Gateway接続（実験的）
-- 📝 TypeScript完全対応
-- 🎯 discord.js風の使いやすいAPI
-- ⚡ 軽量で高速
+- 🚀 Optimized for Cloudflare Workers environment
+- 🔧 Fetch API-based REST API client
+- 🔌 WebSocket Gateway connections via Cloudflare Durable Objects (experimental)
+- 📝 Full TypeScript support
+- 🎯 discord.js-style easy-to-use API
+- ⚡ Lightweight and fast
 
-## インストール
+## Installation
 
 ```bash
 npm install discord-cf
 ```
 
-## クイックスタート
+## Quick Start
 
-### 1. Discord Botの作成
+### 1. Create a Discord Bot
 
-1. [Discord Developer Portal](https://discord.com/developers/applications)でアプリケーションを作成
-2. Bot設定からトークンを取得
-3. OAuth2 > URL GeneratorでBot権限を設定してサーバーに追加
+1. Create an application at [Discord Developer Portal](https://discord.com/developers/applications)
+2. Get the token from Bot settings
+3. Set Bot permissions in OAuth2 > URL Generator and add to your server
 
-### 2. Cloudflare Workerプロジェクトの作成
+### 2. Create a Cloudflare Worker Project
 
 ```bash
 mkdir my-discord-bot
@@ -37,7 +37,7 @@ npm install discord-cf discord-interactions itty-router
 npm install -D @cloudflare/workers-types wrangler typescript
 ```
 
-### 3. 基本的なBotの実装
+### 3. Basic Bot Implementation
 
 `src/index.ts`:
 
@@ -61,7 +61,7 @@ interface Env {
 const router = Router();
 
 router.post('/interactions', async (request, env: Env) => {
-  // Discord署名の検証
+  // Verify Discord signature
   const signature = request.headers.get('X-Signature-Ed25519')!;
   const timestamp = request.headers.get('X-Signature-Timestamp')!;
   const body = await request.text();
@@ -79,14 +79,14 @@ router.post('/interactions', async (request, env: Env) => {
 
   const interaction = JSON.parse(body) as APIInteraction;
 
-  // Discord PINGへの応答
+  // Respond to Discord PING
   if (interaction.type === InteractionType.Ping) {
     return new Response(JSON.stringify({ type: InteractionResponseType.Pong }), {
       headers: { 'Content-Type': 'application/json' },
     });
   }
 
-  // スラッシュコマンドの処理
+  // Handle slash commands
   if (interaction.type === InteractionType.ApplicationCommand) {
     const commandInteraction = interaction as APIChatInputApplicationCommandInteraction;
     const rest = new REST().setToken(env.DISCORD_TOKEN);
@@ -137,7 +137,7 @@ export default {
 };
 ```
 
-### 4. 設定ファイル
+### 4. Configuration Files
 
 `wrangler.toml`:
 
@@ -151,15 +151,15 @@ compatibility_flags = [ "nodejs_compat" ]
 DISCORD_APPLICATION_ID = "YOUR_APPLICATION_ID"
 ```
 
-`.dev.vars` (開発用の環境変数):
+`.dev.vars` (environment variables for development):
 
 ```bash
-# .dev.vars.example をコピーして作成
+# Copy from .dev.vars.example
 cp .dev.vars.example .dev.vars
-# 編集して実際の値を入力
+# Edit and enter actual values
 ```
 
-### 5. コマンドの登録
+### 5. Register Commands
 
 `scripts/register-commands.ts`:
 
@@ -198,25 +198,25 @@ async function registerCommands() {
 registerCommands();
 ```
 
-実行:
+Run:
 
 ```bash
 DISCORD_TOKEN="Bot YOUR_BOT_TOKEN" DISCORD_APPLICATION_ID="YOUR_APP_ID" node --loader tsx scripts/register-commands.ts
 ```
 
-### 6. デプロイ
+### 6. Deploy
 
 ```bash
-# ローカル開発
+# Local development
 npx wrangler dev
 
-# Cloudflareにデプロイ
+# Deploy to Cloudflare
 npx wrangler deploy
 ```
 
-## 高度な使用例
+## Advanced Usage
 
-### REST APIの使用
+### Using REST API
 
 ```typescript
 import { REST, API } from 'discord-cf';
@@ -224,7 +224,7 @@ import { REST, API } from 'discord-cf';
 const rest = new REST().setToken(env.DISCORD_TOKEN);
 const api = new API(rest);
 
-// メッセージを送信
+// Send a message
 await api.channels.createMessage(channelId, {
   content: 'Hello, World!',
   embeds: [{
@@ -247,56 +247,56 @@ await api.channels.createMessage(channelId, {
   }],
 });
 
-// メッセージを編集
+// Edit a message
 await api.channels.editMessage(channelId, messageId, {
   content: 'Updated message',
 });
 
-// メッセージを削除
+// Delete a message
 await api.channels.deleteMessage(channelId, messageId);
 
-// ユーザー情報を取得
+// Get user information
 const user = await api.users.get(userId);
 
-// サーバー情報を取得
+// Get guild information
 const guild = await api.guilds.get(guildId);
 
-// サーバーメンバー一覧を取得
+// Get guild members list
 const members = await api.guilds.getMembers(guildId, { limit: 100 });
 ```
 
-### インタラクションの遅延応答
+### Deferred Interaction Response
 
 ```typescript
 if (interaction.type === InteractionType.ApplicationCommand) {
   const commandInteraction = interaction as APIChatInputApplicationCommandInteraction;
   
   if (commandInteraction.data.name === 'complex-command') {
-    // まず遅延応答を送信
+    // First send a deferred response
     const deferResponse = new Response(JSON.stringify({
       type: InteractionResponseType.DeferredChannelMessageWithSource,
     }), {
       headers: { 'Content-Type': 'application/json' },
     });
 
-    // バックグラウンドで処理を実行
+    // Execute processing in the background
     ctx.waitUntil(
       (async () => {
-        // 重い処理をシミュレート
+        // Simulate heavy processing
         await new Promise(resolve => setTimeout(resolve, 2000));
         
         const rest = new REST().setToken(env.DISCORD_TOKEN);
         const api = new API(rest);
         
-        // フォローアップメッセージを送信
+        // Send follow-up message
         await api.interactions.editReply(
           env.DISCORD_APPLICATION_ID,
           commandInteraction.token,
           {
-            content: '処理が完了しました！',
+            content: 'Processing completed!',
             embeds: [{
-              title: '結果',
-              description: '複雑な処理の結果をここに表示',
+              title: 'Results',
+              description: 'Complex processing results displayed here',
               color: 0x00ff00,
             }],
           }
@@ -309,12 +309,12 @@ if (interaction.type === InteractionType.ApplicationCommand) {
 }
 ```
 
-### Webhookの使用
+### Using Webhooks
 
 ```typescript
 const api = new API(new REST());
 
-// Webhookでメッセージを送信（認証不要）
+// Send message via webhook (no authentication required)
 await api.webhooks.execute(webhookId, webhookToken, {
   content: 'Webhook message',
   username: 'Custom Bot Name',
@@ -325,27 +325,27 @@ await api.webhooks.execute(webhookId, webhookToken, {
   }],
 });
 
-// Webhookメッセージを編集
+// Edit webhook message
 await api.webhooks.editMessage(webhookId, webhookToken, messageId, {
   content: 'Updated webhook message',
 });
 ```
 
-### WebSocket Gateway (実験的)
+### WebSocket Gateway (Experimental)
 
-**注意**: この機能はCloudflare Durable Objectsを使用するため、有料プランが必要です。
+**Note**: This feature requires a paid plan as it uses Cloudflare Durable Objects.
 
 ```typescript
 import { GatewayClient, GatewayIntentBits, WebSocketHandler } from 'discord-cf';
 
-// wrangler.tomlに追加
+// Add to wrangler.toml
 // [[durable_objects.bindings]]
 // name = "WEBSOCKET_HANDLER"
 // class_name = "WebSocketHandler"
 
 export { WebSocketHandler };
 
-// Worker内での使用
+// Usage within Worker
 const gateway = new GatewayClient(env.WEBSOCKET_HANDLER, 'bot-instance');
 
 await gateway.connect({
@@ -357,19 +357,19 @@ await gateway.connect({
   ],
 });
 
-// 接続状態の確認
+// Check connection status
 const status = await gateway.getStatus();
 console.log('Gateway connected:', status.connected);
 ```
 
-## API リファレンス
+## API Reference
 
 ### REST Client
 
 ```typescript
 const rest = new REST(options?);
 
-// メソッド
+// Methods
 rest.setToken(token: string): REST
 rest.get(route: string, options?: RequestData): Promise<unknown>
 rest.post(route: string, options?: RequestData): Promise<unknown>
@@ -424,9 +424,9 @@ api.guilds.getRoles(guildId)
 api.guilds.createRole(guildId, data)
 ```
 
-## サンプルプロジェクト
+## Sample Project
 
-完全なサンプルプロジェクトは[examples/simple](./examples/simple)ディレクトリにあります。
+A complete sample project is available in the [examples/simple](./examples/simple) directory.
 
 ```bash
 cd examples/simple
@@ -434,31 +434,31 @@ npm install
 npm run dev
 ```
 
-## トラブルシューティング
+## Troubleshooting
 
-### "Bad request signature" エラー
-- `DISCORD_PUBLIC_KEY`が正しく設定されているか確認
-- リクエストボディが変更されていないか確認
+### "Bad request signature" Error
+- Verify that `DISCORD_PUBLIC_KEY` is correctly set
+- Ensure the request body hasn't been modified
 
-### "401 Unauthorized" エラー
-- `DISCORD_TOKEN`が正しく設定されているか確認
-- トークンに"Bot "プレフィックスが含まれているか確認
+### "401 Unauthorized" Error
+- Verify that `DISCORD_TOKEN` is correctly set
+- Ensure the token includes the "Bot " prefix
 
-### Durable Objectsエラー
-- Cloudflareの有料プランを使用しているか確認
-- `wrangler.toml`にDurable Objectsの設定があるか確認
+### Durable Objects Error
+- Verify you're using a paid Cloudflare plan
+- Check that Durable Objects configuration exists in `wrangler.toml`
 
-## 制限事項
+## Limitations
 
-- Cloudflare Workersの実行時間制限（10ms〜30秒）
-- メモリ使用量の制限（128MB）
-- 一部のdiscord.js機能は未実装
-- Voice関連の機能は非対応
+- Cloudflare Workers execution time limits (10ms-30 seconds)
+- Memory usage limit (128MB)
+- Some discord.js features are not yet implemented
+- Voice-related features are not supported
 
-## コントリビュート
+## Contributing
 
-プルリクエストを歓迎します！
+Pull requests are welcome!
 
-## ライセンス
+## License
 
 MIT
