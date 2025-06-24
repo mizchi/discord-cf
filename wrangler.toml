@@ -1,0 +1,7 @@
+# This file is only used for testing the library itself
+# For actual usage, see examples/simple/wrangler.toml
+
+name = "cloudflare-discord-js-test"
+main = "test/test-worker.ts"
+compatibility_date = "2024-06-01"
+compatibility_flags = [ "nodejs_compat" ]

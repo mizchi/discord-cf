@@ -1,0 +1,19 @@
+{
+  "name": "discord-bot-example",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
+  },
+  "dependencies": {
+    "cloudflare-discord-js": "file:../..",
+    "discord-interactions": "^4.3.0",
+    "itty-router": "^5.0.18"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250620.0",
+    "wrangler": "^4.21.0"
+  }
+}

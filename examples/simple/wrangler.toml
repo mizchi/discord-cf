@@ -1,0 +1,24 @@
+name = "discord-bot-example"
+main = "src/index.ts"
+compatibility_date = "2024-06-01"
+compatibility_flags = [ "nodejs_compat" ]
+
+# Environment variables are set in .dev.vars file
+# See .dev.vars.example for required variables
+DISCORD_TOKEN = ""
+DISCORD_PUBLIC_KEY = ""
+
+# Durable Objects for WebSocket connections
+[[durable_objects.bindings]]
+name = "WEBSOCKET_HANDLER"
+class_name = "WebSocketHandler"
+
+[[migrations]]
+tag = "v1"
+new_classes = ["WebSocketHandler"]
+
+# KV namespace for storing session data
+[[kv_namespaces]]
+binding = "DISCORD_KV"
+id = "discord_kv_namespace"
+preview_id = "discord_kv_namespace_preview"

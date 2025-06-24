@@ -1,0 +1,52 @@
+{
+  "name": "discord-cf",
+  "version": "0.1.0",
+  "description": "Discord.js compatible library for Cloudflare Workers",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "vitest",
+    "test:workers": "vitest -c vitest.config.workers.ts",
+    "test:all": "npm run test && npm run test:workers",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "discord",
+    "cloudflare",
+    "workers",
+    "discord.js"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@cloudflare/workers-types": "^4.20250620.0",
+    "discord-api-types": "^0.38.13",
+    "discord-interactions": "^4.3.0",
+    "itty-router": "^5.0.18",
+    "wrangler": "^4.21.0"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.8.44",
+    "@types/node": "^24.0.3",
+    "tweetnacl": "^1.0.3",
+    "typescript": "^5.8.3",
+    "undici": "^7.10.0",
+    "vitest": "^3.2.4"
+  }
+}

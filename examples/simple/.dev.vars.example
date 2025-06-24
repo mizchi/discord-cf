@@ -1,0 +1,11 @@
+# Discord Bot Configuration for Example
+# Copy this file to .dev.vars and fill in your actual values
+
+# Your Discord bot token (get from Discord Developer Portal)
+DISCORD_TOKEN=Bot YOUR_BOT_TOKEN_HERE
+
+# Your Discord application's public key (get from Discord Developer Portal)
+DISCORD_PUBLIC_KEY=YOUR_PUBLIC_KEY_HERE
+
+# Your Discord application ID (get from Discord Developer Portal)
+DISCORD_APPLICATION_ID=YOUR_APPLICATION_ID_HERE
