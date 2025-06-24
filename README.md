@@ -2,7 +2,7 @@
 
 > ⚠️ **This project is currently under development and not yet ready for production use.**
 
-A Discord.js-compatible library for Cloudflare Workers. Designed to use Discord API in the Cloudflare Workers environment.
+A Discord.js-compatible client library for Cloudflare Workers. This library provides a simple interface to interact with Discord API in the Cloudflare Workers environment.
 
 ## Features
 
@@ -21,202 +21,34 @@ npm install discord-cf
 
 ## Quick Start
 
-### 1. Create a Discord Bot
-
-1. Create an application at [Discord Developer Portal](https://discord.com/developers/applications)
-2. Get the token from Bot settings
-3. Set Bot permissions in OAuth2 > URL Generator and add to your server
-
-### 2. Create a Cloudflare Worker Project
-
-```bash
-mkdir my-discord-bot
-cd my-discord-bot
-npm init -y
-npm install discord-cf discord-interactions itty-router
-npm install -D @cloudflare/workers-types wrangler typescript
-```
-
-### 3. Basic Bot Implementation
-
-`src/index.ts`:
-
 ```typescript
-import { Router } from 'itty-router';
-import { verifyKey } from 'discord-interactions';
 import { REST, API } from 'discord-cf';
-import { 
-  InteractionType, 
-  InteractionResponseType,
-  type APIInteraction,
-  type APIChatInputApplicationCommandInteraction 
-} from 'discord-api-types/v10';
 
-interface Env {
-  DISCORD_TOKEN: string;
-  DISCORD_PUBLIC_KEY: string;
-  DISCORD_APPLICATION_ID: string;
-}
+// Initialize the REST client
+const rest = new REST().setToken('Bot YOUR_TOKEN');
+const api = new API(rest);
 
-const router = Router();
-
-router.post('/interactions', async (request, env: Env) => {
-  // Verify Discord signature
-  const signature = request.headers.get('X-Signature-Ed25519')!;
-  const timestamp = request.headers.get('X-Signature-Timestamp')!;
-  const body = await request.text();
-
-  const isValidRequest = verifyKey(
-    body,
-    signature,
-    timestamp,
-    env.DISCORD_PUBLIC_KEY
-  );
-
-  if (!isValidRequest) {
-    return new Response('Bad request signature', { status: 401 });
-  }
-
-  const interaction = JSON.parse(body) as APIInteraction;
-
-  // Respond to Discord PING
-  if (interaction.type === InteractionType.Ping) {
-    return new Response(JSON.stringify({ type: InteractionResponseType.Pong }), {
-      headers: { 'Content-Type': 'application/json' },
-    });
-  }
-
-  // Handle slash commands
-  if (interaction.type === InteractionType.ApplicationCommand) {
-    const commandInteraction = interaction as APIChatInputApplicationCommandInteraction;
-    const rest = new REST().setToken(env.DISCORD_TOKEN);
-    const api = new API(rest);
-
-    switch (commandInteraction.data.name) {
-      case 'hello':
-        return new Response(JSON.stringify({
-          type: InteractionResponseType.ChannelMessageWithSource,
-          data: {
-            content: 'Hello from Cloudflare Workers! 👋',
-          },
-        }), {
-          headers: { 'Content-Type': 'application/json' },
-        });
-
-      case 'ping':
-        return new Response(JSON.stringify({
-          type: InteractionResponseType.ChannelMessageWithSource,
-          data: {
-            content: `Pong! 🏓`,
-          },
-        }), {
-          headers: { 'Content-Type': 'application/json' },
-        });
-
-      default:
-        return new Response(JSON.stringify({
-          type: InteractionResponseType.ChannelMessageWithSource,
-          data: {
-            content: 'Unknown command',
-          },
-        }), {
-          headers: { 'Content-Type': 'application/json' },
-        });
-    }
-  }
-
-  return new Response('Unknown interaction type', { status: 400 });
+// Send a message
+await api.channels.createMessage('channel_id', {
+  content: 'Hello from discord-cf!'
 });
 
-router.all('*', () => new Response('Not Found', { status: 404 }));
+// Get user info
+const user = await api.users.get('user_id');
 
-export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
-    return router.handle(request, env);
-  },
-};
+// Create an embed message
+await api.channels.createMessage('channel_id', {
+  embeds: [{
+    title: 'Example Embed',
+    description: 'This is an example embed message',
+    color: 0x00ff00
+  }]
+});
 ```
 
-### 4. Configuration Files
+## Usage
 
-`wrangler.toml`:
-
-```toml
-name = "my-discord-bot"
-main = "src/index.ts"
-compatibility_date = "2024-06-01"
-compatibility_flags = [ "nodejs_compat" ]
-
-[vars]
-DISCORD_APPLICATION_ID = "YOUR_APPLICATION_ID"
-```
-
-`.dev.vars` (environment variables for development):
-
-```bash
-# Copy from .dev.vars.example
-cp .dev.vars.example .dev.vars
-# Edit and enter actual values
-```
-
-### 5. Register Commands
-
-`scripts/register-commands.ts`:
-
-```typescript
-import { REST } from 'cloudflare-discord-js';
-import { Routes } from 'discord-api-types/v10';
-
-const commands = [
-  {
-    name: 'hello',
-    description: 'Replies with a greeting',
-  },
-  {
-    name: 'ping',
-    description: 'Replies with Pong!',
-  },
-];
-
-import { REST } from 'discord-cf';
-import { Routes } from 'discord-api-types/v10';
-
-const rest = new REST().setToken(process.env.DISCORD_TOKEN!);
-
-async function registerCommands() {
-  try {
-    await rest.put(
-      Routes.applicationCommands(process.env.DISCORD_APPLICATION_ID!),
-      { body: commands }
-    );
-    console.log('Successfully registered commands!');
-  } catch (error) {
-    console.error(error);
-  }
-}
-
-registerCommands();
-```
-
-Run:
-
-```bash
-DISCORD_TOKEN="Bot YOUR_BOT_TOKEN" DISCORD_APPLICATION_ID="YOUR_APP_ID" node --loader tsx scripts/register-commands.ts
-```
-
-### 6. Deploy
-
-```bash
-# Local development
-npx wrangler dev
-
-# Deploy to Cloudflare
-npx wrangler deploy
-```
-
-## Advanced Usage
-
-### Using REST API
+### REST API Client
 
 ```typescript
 import { REST, API } from 'discord-cf';
@@ -265,51 +97,30 @@ const guild = await api.guilds.get(guildId);
 const members = await api.guilds.getMembers(guildId, { limit: 100 });
 ```
 
-### Deferred Interaction Response
+### Interactions
 
 ```typescript
-if (interaction.type === InteractionType.ApplicationCommand) {
-  const commandInteraction = interaction as APIChatInputApplicationCommandInteraction;
-  
-  if (commandInteraction.data.name === 'complex-command') {
-    // First send a deferred response
-    const deferResponse = new Response(JSON.stringify({
-      type: InteractionResponseType.DeferredChannelMessageWithSource,
-    }), {
-      headers: { 'Content-Type': 'application/json' },
-    });
+// Reply to an interaction
+await api.interactions.reply(interactionId, interactionToken, {
+  content: 'Thanks for using the command!'
+});
 
-    // Execute processing in the background
-    ctx.waitUntil(
-      (async () => {
-        // Simulate heavy processing
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
-        const rest = new REST().setToken(env.DISCORD_TOKEN);
-        const api = new API(rest);
-        
-        // Send follow-up message
-        await api.interactions.editReply(
-          env.DISCORD_APPLICATION_ID,
-          commandInteraction.token,
-          {
-            content: 'Processing completed!',
-            embeds: [{
-              title: 'Results',
-              description: 'Complex processing results displayed here',
-              color: 0x00ff00,
-            }],
-          }
-        );
-      })()
-    );
+// Edit an interaction reply
+await api.interactions.editReply(applicationId, interactionToken, {
+  content: 'Updated response'
+});
 
-    return deferResponse;
-  }
-}
+// Send a follow-up message
+await api.interactions.followUp(applicationId, interactionToken, {
+  content: 'Here is additional information',
+  embeds: [{
+    title: 'Follow-up',
+    description: 'Additional details'
+  }]
+});
 ```
 
-### Using Webhooks
+### Webhooks
 
 ```typescript
 const api = new API(new REST());
@@ -424,29 +235,82 @@ api.guilds.getRoles(guildId)
 api.guilds.createRole(guildId, data)
 ```
 
-## Sample Project
+## Examples
 
-A complete sample project is available in the [examples/simple](./examples/simple) directory.
+### Creating a Discord Bot with Cloudflare Workers
 
-```bash
-cd examples/simple
-npm install
-npm run dev
+For a complete example of building a Discord bot using this library, see the [examples/simple](./examples/simple) directory.
+
+### Basic Message Operations
+
+```typescript
+import { REST, API } from 'discord-cf';
+
+const rest = new REST().setToken(process.env.DISCORD_TOKEN);
+const api = new API(rest);
+
+// Get channel messages
+const messages = await api.channels.getMessages(channelId, { limit: 10 });
+
+// React to a message
+await api.channels.createReaction(channelId, messageId, '👍');
+
+// Pin a message
+await api.channels.pinMessage(channelId, messageId);
 ```
 
-## Troubleshooting
+### Working with Guilds
 
-### "Bad request signature" Error
-- Verify that `DISCORD_PUBLIC_KEY` is correctly set
-- Ensure the request body hasn't been modified
+```typescript
+// Get guild information
+const guild = await api.guilds.get(guildId);
 
-### "401 Unauthorized" Error
-- Verify that `DISCORD_TOKEN` is correctly set
-- Ensure the token includes the "Bot " prefix
+// List guild channels
+const channels = await api.guilds.getChannels(guildId);
 
-### Durable Objects Error
-- Verify you're using a paid Cloudflare plan
-- Check that Durable Objects configuration exists in `wrangler.toml`
+// Create a new channel
+const newChannel = await api.guilds.createChannel(guildId, {
+  name: 'new-channel',
+  type: 0, // GUILD_TEXT
+});
+
+// Get guild members
+const members = await api.guilds.getMembers(guildId, {
+  limit: 100,
+  after: '0'
+});
+```
+
+## Environment Configuration
+
+### Required Environment Variables
+
+```bash
+# Discord Bot Token
+DISCORD_TOKEN=Bot YOUR_BOT_TOKEN_HERE
+
+# For webhook endpoints (optional)
+DISCORD_PUBLIC_KEY=YOUR_PUBLIC_KEY_HERE
+DISCORD_APPLICATION_ID=YOUR_APPLICATION_ID_HERE
+```
+
+### Using with Cloudflare Workers
+
+```typescript
+interface Env {
+  DISCORD_TOKEN: string;
+}
+
+export default {
+  async fetch(request: Request, env: Env): Promise<Response> {
+    const rest = new REST().setToken(env.DISCORD_TOKEN);
+    const api = new API(rest);
+    
+    // Your bot logic here
+    return new Response('OK');
+  },
+};
+```
 
 ## Limitations
 
