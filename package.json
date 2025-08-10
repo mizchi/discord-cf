@@ -35,15 +35,19 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "@anthropic-ai/claude-code": "^1.0.58",
     "@cloudflare/workers-types": "^4.20250620.0",
     "discord-api-types": "^0.38.13",
     "discord-interactions": "^4.3.0",
+    "dotenv": "^17.2.0",
     "itty-router": "^5.0.18",
-    "wrangler": "^4.21.0"
+    "sodium": "^3.0.2",
+    "wrangler": "^4.21.0",
+    "ws": "^8.18.3"
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.8.44",
-    "@types/node": "^24.0.3",
+    "@types/node": "^24.2.1",
     "tweetnacl": "^1.0.3",
     "typescript": "^5.8.3",
     "undici": "^7.10.0",

@@ -8,6 +8,10 @@ import type {
   RESTGetAPIChannelMessageResult,
   RESTGetAPIChannelMessagesQuery,
   RESTGetAPIChannelMessagesResult,
+  RESTGetAPIChannelResult,
+  RESTPutAPIChannelMessageReactionResult,
+  RESTDeleteAPIChannelMessageReactionResult,
+  RESTPostAPIChannelTypingResult,
   Snowflake,
 } from 'discord-api-types/v10';
 import type { REST, RequestData, RawFile } from '../rest/index.js';
@@ -80,5 +84,45 @@ export class ChannelsAPI {
       query: makeURLSearchParams(query),
       signal,
     }) as Promise<RESTGetAPIChannelMessagesResult>;
+  }
+
+  public async get(
+    channelId: Snowflake,
+    { signal }: Pick<RequestData, 'signal'> = {},
+  ) {
+    return this.rest.get(Routes.channel(channelId), {
+      signal,
+    }) as Promise<RESTGetAPIChannelResult>;
+  }
+
+  public async createReaction(
+    channelId: Snowflake,
+    messageId: Snowflake,
+    emoji: string,
+    { signal }: Pick<RequestData, 'signal'> = {},
+  ) {
+    return this.rest.put(Routes.channelMessageOwnReaction(channelId, messageId, emoji), {
+      signal,
+    }) as Promise<RESTPutAPIChannelMessageReactionResult>;
+  }
+
+  public async deleteOwnReaction(
+    channelId: Snowflake,
+    messageId: Snowflake,
+    emoji: string,
+    { signal }: Pick<RequestData, 'signal'> = {},
+  ) {
+    return this.rest.delete(Routes.channelMessageOwnReaction(channelId, messageId, emoji), {
+      signal,
+    }) as Promise<RESTDeleteAPIChannelMessageReactionResult>;
+  }
+
+  public async triggerTypingIndicator(
+    channelId: Snowflake,
+    { signal }: Pick<RequestData, 'signal'> = {},
+  ) {
+    return this.rest.post(Routes.channelTyping(channelId), {
+      signal,
+    }) as Promise<RESTPostAPIChannelTypingResult>;
   }
 }
